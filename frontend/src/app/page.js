@@ -1,17 +1,19 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import styled from 'styled-components';
 import BillUpload from "./components/BillUpload";
 import BillDetails from "./components/BillDetails";
 import ProductTable from "./components/ProductTable"; 
-import UserTable from "./components/UserTable"; // Import the UserTable component
+import UserTable from "./components/UserTable"; // Import UserTable
 
 const Container = styled.div`
   text-align: center;
   margin-top: 50px;
   font-family: 'Arial, sans-serif';
   color: #333;
+  background-color: white; /* Set background color to white */
+  min-height: 100vh; /* Ensure full height coverage */
 `;
 
 const Logo = styled(Image)`
@@ -29,37 +31,59 @@ const BillContainer = styled.div`
   padding: 20px;
   border: 1px solid #ddd;
   border-radius: 8px;
-  background-color: #f9f9f9;
+  background-color: #f9f9f9; /* You can change this to white if desired */
 `;
-
-const initialUsers = [
-  "Alice Smith",
-  "Bob Johnson",
-  "Charlie Brown",
-  "Diana Prince",
-  "Ethan Hunt"
-];
 
 export default function HomePage() {
   const [billDetails, setBillDetails] = useState(null);
   const [products, setProducts] = useState([]);
-  const [users] = useState(initialUsers); // Use the initial list of users
+  const [userTotals, setUserTotals] = useState({});
+  const [assignedItems, setAssignedItems] = useState({}); // Keep track of assigned items
+
+  // Random user names
+  const users = ['Alice', 'Bob', 'Charlie', 'David', 'Eve'];
 
   const handleBillRecognition = (data) => {
     setBillDetails(data);
-    setProducts(data);  // Assuming the JSON structure matches
+    setProducts(data);
   };
 
-  const handleAssign = (checked, user, product) => {
-    if (checked) {
-      // Assign the product to the user and remove it from the product list
-      setProducts(prevProducts => 
-        prevProducts.map(item => 
-          item.product === product.product ? { ...item, user } : item
-        ).filter(item => item.user === undefined) // Remove assigned items
-      );
-    }
+  const handleAssign = (product, user, checked) => {
+    setAssignedItems(prev => {
+      const updatedAssignments = { ...prev };
+
+      // If the checkbox is checked, add the product to the user's list
+      if (checked) {
+        updatedAssignments[user] = updatedAssignments[user] || [];
+        updatedAssignments[user].push(product);
+      } else {
+        // If unchecked, remove the product from the user's list based on product and index
+        updatedAssignments[user] = updatedAssignments[user].filter(p => 
+          !(p.product === product.product && p.index === product.index)
+        );
+      }
+      return updatedAssignments;
+    });
   };
+
+  const calculateUserTotals = () => {
+    const totals = {};
+    // Calculate total for each user based on assigned items
+    Object.entries(assignedItems).forEach(([user, items]) => {
+      const total = items.reduce((sum, item) => {
+        const price = parseFloat(item.price); // Convert price to a float
+        return sum + (isNaN(price) ? 0 : price); // Add to total if valid
+      }, 0);
+      totals[user] = total; // Assign calculated total to user
+    });
+    return totals;
+  };
+
+  // Update user totals whenever assigned items change
+  useEffect(() => {
+    const totals = calculateUserTotals();
+    setUserTotals(totals);
+  }, [assignedItems]);
 
   return (
     <Container>
@@ -82,8 +106,17 @@ export default function HomePage() {
 
       {products.length > 0 && <ProductTable products={products} />}
 
-      {/* Display User Table for Assigning Products */}
-      <UserTable users={users} products={products} onAssign={handleAssign} />
+      {/* Display User Table for assigning products */}
+      <UserTable users={users} products={products} onAssign={handleAssign} assignedItems={assignedItems} />
+
+      <h2>User Totals</h2>
+      <ul>
+        {Object.entries(userTotals).map(([user, total]) => (
+          <li key={user}>
+            {user}: ${total.toFixed(2)}
+          </li>
+        ))}
+      </ul>
     </Container>
   );
 }
