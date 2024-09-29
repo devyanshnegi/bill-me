@@ -39,6 +39,7 @@ export default function HomePage() {
   const [products, setProducts] = useState([]);
   const [userTotals, setUserTotals] = useState({});
   const [assignedItems, setAssignedItems] = useState({}); // Keep track of assigned items
+  const [totalBillAmount, setTotalBillAmount] = useState(0); // Total amount of the bill
 
   // Random user names
   const users = ['Alice', 'Bob', 'Charlie', 'David', 'Eve'];
@@ -46,6 +47,14 @@ export default function HomePage() {
   const handleBillRecognition = (data) => {
     setBillDetails(data);
     setProducts(data);
+
+    // Calculate total amount from the bill
+    const total = data.reduce((sum, item) => {
+      const price = parseFloat(item.price);
+      return sum + (isNaN(price) ? 0 : price);
+    }, 0);
+    
+    setTotalBillAmount(total); // Set total bill amount
   };
 
   const handleAssign = (product, user, checked) => {
@@ -55,7 +64,17 @@ export default function HomePage() {
       // If the checkbox is checked, add the product to the user's list
       if (checked) {
         updatedAssignments[user] = updatedAssignments[user] || [];
-        updatedAssignments[user].push(product);
+        
+        // Check if adding this product would exceed the total bill amount
+        const currentUserTotal = calculateUserTotals()[user] || 0;
+        const price = parseFloat(product.price);
+        
+        if (currentUserTotal + price <= totalBillAmount) {
+          updatedAssignments[user].push(product);
+        } else {
+          alert(`Total for ${user} cannot exceed the total bill amount.`);
+          return prev; // Return previous assignments if it exceeds
+        }
       } else {
         // If unchecked, remove the product from the user's list based on product and index
         updatedAssignments[user] = updatedAssignments[user].filter(p => 
