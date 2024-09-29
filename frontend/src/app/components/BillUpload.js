@@ -1,52 +1,36 @@
-import React, { useState } from "react";
-import styled from 'styled-components';
+import React, { useState } from 'react';
 
-const UploadContainer = styled.div`
-  margin: 20px 0;
-`;
+const ImageUpload = () => {
+    const [selectedFile, setSelectedFile] = useState(null);
 
-const TextArea = styled.textarea`
-  width: 100%;
-  height: 150px;
-  margin-bottom: 10px;
-`;
+    const handleFileChange = (e) => {
+        setSelectedFile(e.target.files[0]);
+    };
 
-const Button = styled.button`
-  padding: 10px 15px;
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
+    const handleUpload = async (e) => {
+        e.preventDefault();
 
-  &:hover {
-    background-color: #45a049;
-  }
-`;
+        const formData = new FormData();
+        formData.append('image', selectedFile);  // 'image' matches the name in multer.single('image')
 
-const BillUpload = ({ onRecognition }) => {
-  const [jsonString, setJsonString] = useState('');
+        const response = await fetch('http://localhost:5000/api/vision/upload', {
+            method: 'POST',
+            body: formData,
+        });
 
-  const handleUpload = () => {
-    try {
-      const parsedData = JSON.parse(jsonString);
-      onRecognition(parsedData);
-    } catch (error) {
-      alert('Invalid JSON string. Please check your input.');
-    }
-  };
+        const data = await response.json();
+        console.log(data);  // This will log the detected text data
+    };
 
-  return (
-    <UploadContainer>
-      <h2>Upload Bill JSON</h2>
-      <TextArea
-        value={jsonString}
-        onChange={(e) => setJsonString(e.target.value)}
-        placeholder="Paste your JSON string here..."
-      />
-      <Button onClick={handleUpload}>Submit</Button>
-    </UploadContainer>
-  );
+    return (
+        <div>
+            <h1>Upload an Image</h1>
+            <form onSubmit={handleUpload}>
+                <input type="file" onChange={handleFileChange} />
+                <button type="submit">Upload and Detect Text</button>
+            </form>
+        </div>
+    );
 };
 
-export default BillUpload;
+export default ImageUpload;
