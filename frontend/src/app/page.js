@@ -1,31 +1,26 @@
 "use client";
 import React, { useState } from "react";
-import Image from "next/image";
 import BillUpload from "./components/BillUpload";
 import BillDetails from "./components/BillDetails";
 
 export default function HomePage() {
-  const [billDetails, setBillDetails] = useState(null);
+  const [billDetails, setBillDetails] = useState(null); // Start wi th null
 
   const handleBillRecognition = (data) => {
-    setBillDetails(data);
+    // Log the data received from BillUpload to verify structure
+    console.log("Data received in HomePage:", data);
+    setBillDetails(data); // Set the entire response object (with items array)
   };
 
   return (
-    <div style={{ textAlign: "center", marginTop: "50px" }}>
-      {/* Add your logo */}
-      <Image
-        src="/logo.png" // Referencing the image placed in the public folder
-        alt="Bill Me Logo"
-        width={300} // Adjust width as per your design needs
-        height={150} // Adjust height as per your design needs
-      />
-
+    <div>
       <h1>Bill Recognition App</h1>
-
       <BillUpload onRecognition={handleBillRecognition} />
-
-      {billDetails && <BillDetails details={billDetails} />}
+      {billDetails ? (
+        <BillDetails details={billDetails} />
+      ) : (
+        <p>No details available</p>
+      )}
     </div>
   );
 }
